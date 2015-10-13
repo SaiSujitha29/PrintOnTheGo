@@ -1,0 +1,173 @@
+<html>
+	<head>
+		<title>Print OnThe GO! Web App</title>
+		<meta name="viewport" content="initial-scale=1.0">
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+		<style>
+		html, body {
+			height: 100%;
+			margin: 20px;
+			padding: 0;
+			padding-top: 14px;
+    		padding-bottom:14px;
+    		padding-left:10px;
+    		padding-right:10px;
+    		background-image: url("background.png");
+    		background-repeat: repeat;
+		}
+		#map {
+			height: 100%;
+		}
+		button {
+			display:inline-block;
+			position: relative;
+			text-transform: uppercase;
+			text-align:center;
+			font-weight:bold ;
+			color:black;
+		}
+		</style>
+	</head>
+	<body style="font-family:Verdana;">
+		<div style="font-size:75px;">
+	    	<p style="color:White; text-align:center">Print OnThe Go!</p>
+      	</div>
+      	<button type="button" onclick="LocateUser()">Locate Me!</button>
+      	<button type="button" onclick="getClosest()" >Nearest Printer</button>
+		<button type="button" onclick="removeInactiveMarkers()">Hide Inactive Printers</button>
+		<button type="button" onclick="setInactiveMarkers()">Show All Printers</button>
+		
+		<br/>
+		<br/>
+		<br/>
+		<div id= "map"></div>
+		<script>
+		var mit;
+		var user;
+		var activeMarkers = [];
+		var inactiveMarkers = [];
+		
+
+var printerList = [[{lat: 42.3597481, lng: -71.09183639999998}, true, "Barker Library"], [ {lat: 42.3604055, lng: -71.08391879999999}, false, "Dewey Library"], [ {lat: 40.7127837, lng: -74.00594130000002}, false, "Hayden Library"], [{lat: 42.3597481, lng: -71.09183639999998}, true, "Barker Library"],[{lat: 42.4026771, lng: -71.13802240000001}, true, "Rotch Library"], [{lat: 42.358284, lng: -71.0900618}, true, "4-167"],[{lat: 42.3613361, lng: -71.09206890000002}, true, "38-370"],	[{lat: 42.3624251, lng: -71.08820000000003}, true, "56-129"],[{lat: 42.36105420000001, lng: -71.08833149999998}, true, "66-080"],[{lat: 42.3607372, lng: -71.08449229999997}, true, "E51-075"],[{lat: 42.359083, lng: -71.094761}, false, "W20-575"],[{lat: 42.3594625, lng: -71.09088380000003}, true, "1-150"]]
+
+		function initialize() {
+			mit = new google.maps.Map(document.getElementById('map'), { 
+				center: {lat: 42.360091, lng: -71.09415999999999},
+				zoom: 19
+			});
+			user = new google.maps.Marker({
+						position: {lat: 42.360091, lng: -71.09415999999999}
+					});		
+			setActiveMarkers();
+			setInactiveMarkers();
+		}
+
+		function locateUser() {
+			var map = new google.maps.InfoWindow({map: mit});
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(function(position) {
+					var currpos = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+						};
+					map.setPosition(currpos);
+					mit.setCenter(currpos);
+				}, function() {
+					alert("FAILED.");
+				});
+			} else {
+				alert("FAILED.");
+			}
+		}
+
+		function setActiveMarkers() {
+			user.setMap(mit);
+			for (var index in printerList) {
+				printer = printerList[index];
+				if (printer[1] === true) {
+					var toAdd = new google.maps.Marker({
+						position: printer[0],
+						map: mit,
+						title: printer[2],
+						icon: "green.png"
+					});
+					activeMarkers.push(toAdd);
+					toAdd.setMap(mit)
+				}	
+			}
+		}
+
+		function setInactiveMarkers() {
+			for (var index in printerList) {
+				printer = printerList[index];
+				if (printer[1] === false) {
+					var toAdd = new google.maps.Marker({
+						position: printer[0],
+						map: mit,
+						title: printer[2],
+						icon: "red.png"
+					});
+					inactiveMarkers.push(toAdd);
+					toAdd.setMap(mit)
+				}	
+			}
+		}
+
+		function retrieveDirections() {
+			directionsDisplay = new google.maps.DirectionsRenderer();
+			directionsDisplay.setMap(mit);
+			var request = {
+				origin: new google.maps.LatLng(42.360091, -71.09415999999999),
+				destination: new google.maps.LatLng(42.3604055, -71.08391879999999),
+				travelMode: google.maps.TravelMode.WALKING
+			};
+			directionsService.route(request, function(response, status) {
+				if (states == google.maps.DirectionStatus.OK) {
+					directionsDisplay.setDirections(response);
+				}
+			});
+		}
+
+		function removeActiveMarkers() {
+			for (var index in activeMarkers) {
+				marker = activeMarkers[index];
+				marker.setMap(null);
+			}
+		}
+
+		function removeInactiveMarkers() {
+			for (var index in inactiveMarkers) {
+				marker = inactiveMarkers[index];
+				marker.setMap(null);
+			}
+		}
+		function getClosest(){
+			var distances = []; 
+			var minMarker;
+
+			min = 999999999;
+
+			for (var index in activeMarkers) {
+				marker = activeMarkers[index];
+				dist = google.maps.geometry.spherical.computeDistanceBetween(marker.position, user.position);
+				if (dist < min) {
+					min = dist
+					minMarker = marker
+				}
+			}
+			var toAdd = new google.maps.Marker({
+						position: minMarker.position,
+						map: mit,
+						icon: "circledgreen.png"
+					});
+			toAdd.setMap(mit)
+		}
+
+		</script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpo3TYx1PSDaOHwORdfu1mHmSoQJQppGc&signed_in=true&libraries=geometry&callback=initialize" type="text/javascript" async defer></script>
+
+
+	</body>
+</html>
